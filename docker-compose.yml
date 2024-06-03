@@ -1,0 +1,13 @@
+services:
+  python:
+    container_name: ${PYTHON_CONTAINER_HOST}
+    hostname: ${PYTHON_HOST}
+    env_file: .env
+    tty: true
+    build:
+      context: .
+      dockerfile: ./docker/python/Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      - ./src:/python/src/app
