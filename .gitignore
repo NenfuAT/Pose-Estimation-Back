@@ -1,3 +1,4 @@
 .env
 src/router/__pycache__
 src/service/__pycache__
+src/download
