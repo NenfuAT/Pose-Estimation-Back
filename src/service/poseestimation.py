@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import requests
 from ahrs.filters import Madgwick
+from fastapi.responses import JSONResponse
 
 
 def PoseEstimationz(gyroUrl:str,accUrl:str):
@@ -65,14 +66,15 @@ def PoseEstimationz(gyroUrl:str,accUrl:str):
 		
 		print(f"{common_timestamps[i]},{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]}")
 
-		filtered_orientation.append([common_timestamps[i], quaternion[0], quaternion[1], quaternion[2], quaternion[3]])
+		filtered_orientation.append([int(common_timestamps[i]), float(quaternion[0]), float(quaternion[1]), float(quaternion[2]), float(quaternion[3])])
+
 
 
 	with open('./download/data.csv', 'w', newline='') as csvfile:
 		csvwriter = csv.writer(csvfile)
 		csvwriter.writerow(['time', 'w', 'x', 'y','z'])  # ヘッダーを書き込む
 		csvwriter.writerows(filtered_orientation)
-	return filtered_orientation
+	return JSONResponse(content={"quaternions": filtered_orientation})
 
 def get_filename_from_url(url):
 		parsed_url = urlparse(url)
