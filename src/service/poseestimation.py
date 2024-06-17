@@ -49,7 +49,7 @@ def PoseEstimationz(gyroUrl:str,accUrl:str):
 	# 線形補間を使用してデータを補間
 	gyro_data = gyro_data.set_index('time').reindex(common_timestamps).interpolate().reset_index()
 	acc_data = acc_data.set_index('time').reindex(common_timestamps).interpolate().reset_index()
-	# サンプリングレートの動的計算
+	# サンプリングレートの計算
 	time_diffs = np.diff(common_timestamps) / 1000.0  # タイムスタンプの差を秒単位に変換
 	mean_dt = np.mean(time_diffs)
 	sampling_rate = 1.0 / mean_dt
@@ -67,8 +67,6 @@ def PoseEstimationz(gyroUrl:str,accUrl:str):
 		acc = [acc_data['x'][i], acc_data['y'][i], acc_data['z'][i]]
 		# フィルタの更新
 		quaternion=madgwick.updateIMU(q=quaternion,gyr=gyr, acc=acc)
-		
-		print(f"{common_timestamps[i]},{quaternion[0]},{quaternion[1]},{quaternion[2]},{quaternion[3]}")
 
 		filtered_orientation_csv.append([common_timestamps[i],quaternion[0],quaternion[1],quaternion[2],quaternion[3]])
 		filtered_orientation.append({"time": int(common_timestamps[i]), "w": float(quaternion[0]), "x": float(quaternion[1]), "y": float(quaternion[2]), "z": float(quaternion[3])})
@@ -76,10 +74,18 @@ def PoseEstimationz(gyroUrl:str,accUrl:str):
 
 
 
-	with open('./download/data.csv', 'w', newline='') as csvfile:
-		csvwriter = csv.writer(csvfile)
-		csvwriter.writerow(['time', 'w', 'x', 'y','z'])  # ヘッダーを書き込む
-		csvwriter.writerows(filtered_orientation_csv)
+	# with open('./download/data.csv', 'w', newline='') as csvfile:
+	# 	csvwriter = csv.writer(csvfile)
+	# 	csvwriter.writerow(['time', 'w', 'x', 'y','z'])  # ヘッダーを書き込む
+	# 	csvwriter.writerows(filtered_orientation_csv)
+
+	try:
+		os.remove(gyro_save_path)
+		os.remove(acc_save_path)
+		print("Files deleted successfully.")
+	except Exception as e:
+		print("Error while deleting files:", e)
+
 
 	return JSONResponse(content={"quaternions": filtered_orientation})
 

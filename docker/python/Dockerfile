@@ -17,3 +17,6 @@ RUN pip install --upgrade pip
 
 # python ライブラリのインストール
 RUN pip install -r lib/requirements.txt
+
+# アプリケーションの実行
+CMD ["python3", "main.py"]
