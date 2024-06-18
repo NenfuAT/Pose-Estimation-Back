@@ -25,7 +25,7 @@ def Init():
 
 	@app.post("/api/estimation")
 	def poseEstimation(urls:URL):
-		response=poseestimation.PoseEstimationz(urls.gyro_url,urls.acc_url)
+		response=poseestimation.PoseEstimation(urls.gyro_url,urls.acc_url)
 		return response
 
 
