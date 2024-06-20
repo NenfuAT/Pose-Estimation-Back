@@ -9,7 +9,7 @@ from ahrs.filters import Madgwick
 from fastapi.responses import JSONResponse
 
 
-def PoseEstimationz(gyroUrl:str,accUrl:str):
+def PoseEstimation(gyroUrl:str,accUrl:str):
 	print(gyroUrl,accUrl)
 	# 保存先ディレクトリ
 	save_dir = "./download"
