@@ -1,18 +1,20 @@
 import csv
 import os
+import zipfile
 from urllib.parse import urlparse
 
 import numpy as np
 import pandas as pd
 import requests
 from ahrs.filters import Madgwick
-from fastapi.responses import JSONResponse
+from fastapi.responses import Response
 
 
 def PoseEstimation(gyroUrl:str,accUrl:str):
 	print(gyroUrl,accUrl)
 	# 保存先ディレクトリ
 	save_dir = "./download"
+	result_dir="./result"
 	os.makedirs(save_dir, exist_ok=True)  # ディレクトリが存在しない場合は作成
 
 	# ジャイロデータの保存ファイル名とパス
@@ -74,10 +76,10 @@ def PoseEstimation(gyroUrl:str,accUrl:str):
 
 
 
-	# with open('./download/data.csv', 'w', newline='') as csvfile:
-	# 	csvwriter = csv.writer(csvfile)
-	# 	csvwriter.writerow(['time', 'w', 'x', 'y','z'])  # ヘッダーを書き込む
-	# 	csvwriter.writerows(filtered_orientation_csv)
+	with open(result_dir+'/result.csv', 'w', newline='') as csvfile:
+		csvwriter = csv.writer(csvfile)
+		csvwriter.writerow(['time', 'w', 'x', 'y','z'])  # ヘッダーを書き込む
+		csvwriter.writerows(filtered_orientation_csv)
 
 	try:
 		os.remove(gyro_save_path)
@@ -86,9 +88,32 @@ def PoseEstimation(gyroUrl:str,accUrl:str):
 	except Exception as e:
 		print("Error while deleting files:", e)
 
-
-	return JSONResponse(content={"quaternions": filtered_orientation})
+	zip_csv_file(result_dir,"result")
+	body,boundary=create_multipart(result_dir)
+	return Response(body, media_type=f"multipart/form-data; boundary={boundary}")
 
 def get_filename_from_url(url):
 		parsed_url = urlparse(url)
 		return os.path.basename(parsed_url.path)
+
+def zip_csv_file(result_dir,filename):
+    with zipfile.ZipFile(result_dir+"/"+filename+".zip", 'w', zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write(result_dir+"/"+filename+".csv", arcname=filename+".csv")
+
+def create_multipart(result_dir):
+	boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW"
+	filename = "result.zip"
+	filepath = os.path.join(result_dir, filename)
+
+	
+	# zipファイルをバイナリモードで読み込む
+	with open(filepath, "rb") as file:
+		zip_data = file.read()
+
+	# マルチパートフォームデータの構築
+	content = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'
+        f'Content-Type: application/zip\r\n\r\n'
+    ).encode('utf-8') + zip_data + f"\r\n--{boundary}--".encode('utf-8')
+	return content, boundary
