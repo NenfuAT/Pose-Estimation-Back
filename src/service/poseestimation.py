@@ -115,9 +115,23 @@ def PoseEstimation(gyroUrl:str,accUrl:str):
 		linearAccData = pd.concat([linearAccData, new_row], ignore_index=True)
 		filtered_orientation_csv.append([common_timestamps[i],quaternion[0],quaternion[1],quaternion[2],quaternion[3]])
 		filtered_orientation.append({"time": int(common_timestamps[i]), "w": float(quaternion[0]), "x": float(quaternion[1]), "y": float(quaternion[2]), "z": float(quaternion[3])})
+		
+	
+	# 閾値の設定
+	threshold = 0.1  # 必要に応じて調整
 
+	# 各軸で閾値以下となる最初のインデックスを取得
+	condition = (
+		(linearAccData["x"].abs() <= threshold) &
+		(linearAccData["y"].abs() <= threshold) &
+		(linearAccData["z"].abs() <= threshold)
+	)
 
-
+	# 条件を満たす最初のインデックスを取得
+	start_index = linearAccData[condition].index.min()
+	linearAccData = linearAccData.loc[start_index:].reset_index(drop=True)
+	linear_acc_data=linear_acc_data[start_index:]
+	filtered_orientation_csv = filtered_orientation_csv[start_index:]
 	time = (linearAccData["time"] - linearAccData["time"][0]) / 1000
 
 	def butter_lowpass_filter(data, cutoff, fs, order=5):
@@ -146,7 +160,7 @@ def PoseEstimation(gyroUrl:str,accUrl:str):
 		if i == 0:
 			dt = 0
 		else:
-			dt = (common_timestamps[i] - common_timestamps[i - 1])/1000
+			dt = (linearAccData["time"][i] - linearAccData["time"][i - 1])/1000
 
 		# 台形積分を使用して速度を更新
 		if i > 0:
@@ -159,7 +173,7 @@ def PoseEstimation(gyroUrl:str,accUrl:str):
 			vz += avg_acc_z * dt
 
 		# 新しい行を作成
-		new_row = pd.DataFrame({"time": [common_timestamps[i]], "vx": [vx], "vy": [vy], "vz": [vz]})
+		new_row = pd.DataFrame({"time": [linearAccData["time"][i]], "vx": [vx], "vy": [vy], "vz": [vz]})
 		speedData = pd.concat([speedData, new_row], ignore_index=True)
 
 	# 距離を計算するためのループ
