@@ -50,6 +50,10 @@ def PoseEstimation(gyroUrl:str,accUrl:str):
 	acc_data = pd.read_csv(acc_save_path)
 	#共通のタイムスタンプを作成
 	common_timestamps = np.union1d(gyro_data['time'], acc_data['time'])
+	# 重複を削除
+	gyro_data = gyro_data.drop_duplicates(subset=['time'])
+	acc_data = acc_data.drop_duplicates(subset=['time'])
+
 	# 線形補間を使用してデータを補間
 	gyro_data = gyro_data.set_index('time').reindex(common_timestamps).interpolate().reset_index()
 	acc_data = acc_data.set_index('time').reindex(common_timestamps).interpolate().reset_index()
